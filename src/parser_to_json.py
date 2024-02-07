@@ -53,30 +53,44 @@ class Parser():
         except OSError as err:
             logger.error("Make sure that the request is correct.\n" + err.args[1])
             return False
+        
+    def choose_mode(self) -> None:
+        if self.mode == "dir":
+            filenames = glob.glob(self.path[0] + "/*")
+            self.parse_files(filenames)
+        else:
+            self.parse_files(self.path)
+        
+    def parse_files(self, filenames: list[str]) -> None:
 
-    def parse_file(self) -> None:
-        i = 1
-        outuput_data = {}
-        for file in self.path:
+        output_data = {}
+
+        for i, file in enumerate(filenames):
             with open(file, "r") as f:
-                inside = f.read().split("\n")
-                inside_data = {}
-                ii = 1
-                for one in inside:
-                    inside_data[ii] = one
-                    ii += 1
-            outuput_data[i] = inside_data
-            i += 1
-        print(outuput_data)
-        # print(json.dumps(self.data))
-        self.data["out"] = outuput_data
+                lines = f.readlines()
+                for j, line in enumerate(lines):
+                    if str(j+1) not in output_data:
+                        output_data[str(j+1)] = {}
+                    output_data[str(j+1)][str(i+1)] = line.strip()
+        
+        max_lines = max(map(int, output_data.keys()))
+        for line_num in range(1, max_lines+1):
+            for file_num in range(1, len(filenames)+1):
+                if str(file_num) not in output_data.get(str(line_num), {}):
+                    output_data[str(line_num)][str(file_num)] = ""
+        sorted_data = {key: dict(sorted(value.items())) for key,
+                       value in sorted(output_data.items(),key=lambda x: int(x[0]))}
+
+        self.data["out"] = sorted_data
         self.save_json()
 
     def save_json(self):
         date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
-        with open(f"../data{date}.json", "w", encoding="utf-8") as f:
+        name = f"../data{date}.json"
+        with open(name, "w", encoding="utf-8") as f:
             json.dump(self.data, f, ensure_ascii=False, indent=3)
-
+        json_path = os.path.abspath(name)
+        print("Созданный файл находится по адресу: " + json_path)
 
 if __name__ == "__main__":
     logger = logging.getLogger('logger')
@@ -87,4 +101,4 @@ if __name__ == "__main__":
     parser = Parser(path, numb)
     ok = parser.find_config()
     if ok:
-        parser.parse_file()
+        parser.choose_mode()
