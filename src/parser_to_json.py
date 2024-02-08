@@ -1,10 +1,10 @@
-from glob import glob
-from os import path
 import sys
-import logging
 import json
-from datetime import datetime
+import logging
+from os import path
 from enum import Enum
+from glob import glob
+from datetime import datetime
 
 
 class Mode(Enum):
